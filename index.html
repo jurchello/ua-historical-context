@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Історична хронологія подій (Україна)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      overflow: auto;
+    }
+
+.label-column {
+  width: 600px;
+  flex-shrink: 0;
+}
+
+
+
+    .timeline-scroll {
+      overflow-x: auto;
+      overflow-y: auto;
+      white-space: nowrap;
+      padding-left: 0.5rem;
+      flex-grow: 1;
+    }
+
+.event-label {
+  font-weight: bold;
+  height: 24px;
+  padding: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
+}
+
+    .header-label {
+      height: 24px;
+    }
+
+    .event-row {
+      display: flex;
+      align-items: center;
+      height: 24px;
+    }
+
+    .year-cell {
+      width: 40px;
+      height: 24px;
+      flex-shrink: 0;
+      border: 1px solid #e4e2e2;
+    }
+
+    .active {
+      background-color: #23d855;
+    }
+
+    .approximate {
+      background-color: #f5bd00;
+    }
+
+    .point {
+      background-color: #23d855;
+    }
+
+    .between {
+      background-image: repeating-linear-gradient(
+        45deg,
+        #f5bd00 0,
+        #f5bd00 4px,
+        transparent 4px,
+        transparent 8px
+      );
+      background-color: white;
+    }
+
+    .tilde {
+      font-weight: bold;
+      font-size: 16px;
+      color: #1b33dd; /* Bootstrap warning */
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container-fluid">
+  <h1 class="my-4">Історична хронологія подій (Україна)</h1>
+
+  <!-- Фільтр -->
+  <div class="row mb-3">
+    <div class="col-auto">
+      <label for="fromYear" class="form-label">З року:</label>
+      <input type="number" id="fromYear" class="form-control" value="1600" />
+    </div>
+    <div class="col-auto">
+      <label for="toYear" class="form-label">До року:</label>
+      <input type="number" id="toYear" class="form-control" value="2025" />
+    </div>
+    <div class="col-md-3">
+  <label for="searchText" class="form-label">Назва містить:</label>
+  <input type="text" id="searchText" class="form-control" />
+</div>
+<div class="col-md-3">
+  <label for="regionFilter" class="form-label">Регіон:</label>
+  <select id="regionFilter" class="form-select" multiple></select>
+</div>
+<div class="col-md-3">
+  <label for="categoryFilter" class="form-label">Категорія:</label>
+  <select id="categoryFilter" class="form-select" multiple></select>
+</div>
+
+    <div class="col-auto align-self-end">
+      <button class="btn btn-primary" onclick="applyYearFilter()">Застосувати</button>
+    </div>
+  </div>
+
+  <!-- Головний блок -->
+  <div class="d-flex">
+    <div class="label-column">
+      <div class="event-label header-label"></div>
+      <div id="labels"></div>
+    </div>
+    <div class="timeline-scroll" id="timeline"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>
+  let allEvents = [];
+  const defaultStartYear = 1600;
+  const defaultEndYear = new Date().getFullYear();
+
+  function renderTimeline(events, fromYear, toYear) {
+
+
+
+    const usedYearsSet = new Set();
+    events.forEach(event => {
+      const type = event['Тип'] || '';
+      const fromRaw = event['Початок'];
+      const toRaw = event['Кінець'];
+
+      function cleanYear(value) {
+        if (!value) return '';
+        return String(value).replace(/[^0-9]/g, '').substring(0, 4);
+      }
+
+      let from = parseInt(cleanYear(fromRaw));
+      let to = parseInt(cleanYear(toRaw));
+
+      if (isNaN(from)) from = 1000;
+      if (isNaN(to)) to = toYear;
+
+      if (type === 'точка') {
+        if (from >= fromYear && from <= toYear) usedYearsSet.add(from);
+      } else {
+        for (let y = Math.max(from, fromYear); y <= Math.min(to, toYear); y++) {
+          usedYearsSet.add(y);
+        }
+      }
+    });
+
+    const usedYears = [...usedYearsSet].sort((a, b) => a - b);
+
+
+
+    const timeline = document.getElementById('timeline');
+    const labels = document.getElementById('labels');
+    timeline.innerHTML = '';
+    labels.innerHTML = '';
+
+    // Заголовок із роками
+    const headerRow = document.createElement('div');
+    headerRow.className = 'event-row';
+
+    usedYears.forEach(year => {
+      const yearCell = document.createElement('div');
+      yearCell.className = 'year-cell text-center';
+      yearCell.style.fontSize = '10px';
+      yearCell.textContent = year;
+      headerRow.appendChild(yearCell);
+    });
+    timeline.appendChild(headerRow);
+
+    // Події
+    events.forEach(event => {
+      const region = event['Регіон'] || '';
+      const category = event['Категорія'] || '';
+      const name = event['Назва'] || '';
+      const type = event['Тип'] || '';
+      const comment = event['Коментар'] || '';
+      const fromRaw = event['Початок'];
+      const toRaw = event['Кінець'];
+
+      function cleanYear(value) {
+        if (!value) return '';
+        return String(value).replace(/[^0-9]/g, '').substring(0, 4);
+      }
+
+      let from = parseInt(cleanYear(fromRaw));
+      let to = parseInt(cleanYear(toRaw));
+
+      if (isNaN(from)) from = 1000;
+      if (isNaN(to)) to = toYear;
+
+      const approxFrom = (fromRaw || '').trim().startsWith('~');
+      const approxTo = (toRaw || '').trim().startsWith('~');
+
+      const tildeFrom = approxFrom ? '≈' : '';
+      const tildeTo = approxTo ? '≈' : '';
+
+      const labelDiv = document.createElement('div');
+      labelDiv.className = 'event-label';
+
+      const fullText = `${region}. ${category}: ${name}`;
+      labelDiv.textContent = fullText.slice(0, 100);
+      labelDiv.title = comment ? `${fullText}\n${comment}` : fullText;
+      labels.appendChild(labelDiv);
+
+      const row = document.createElement('div');
+      row.className = 'event-row';
+
+      usedYears.forEach(year => {
+        const cell = document.createElement('div');
+        cell.className = 'year-cell';
+
+        let isFilled = false;
+
+        if (type === 'неточний період') {
+          if (year >= from && year <= to) {
+            cell.classList.add('approximate');
+            isFilled = true;
+          }
+        } else if (type === 'період') {
+          if (year >= from && year <= to) {
+            cell.classList.add('active');
+            isFilled = true;
+          }
+        } else if (type === 'між датами') {
+          if (year >= from && year <= to) {
+            cell.classList.add('between');
+            isFilled = true;
+          }
+        } else if (type === 'точка') {
+          if (year === from) {
+            cell.classList.add('point');
+            isFilled = true;
+          }
+        }
+
+        if (isFilled) {
+          if (year === from && tildeFrom) {
+            cell.textContent = tildeFrom;
+            cell.classList.add('tilde');
+          } else if (year === to && tildeTo) {
+            cell.textContent = tildeTo;
+            cell.classList.add('tilde');
+          }
+        }
+
+        row.appendChild(cell);
+      });
+
+      timeline.appendChild(row);
+    });
+  }
+
+function applyYearFilter() {
+  const from = parseInt(document.getElementById('fromYear').value) || defaultStartYear;
+  const to = parseInt(document.getElementById('toYear').value) || defaultEndYear;
+  const searchInput = document.getElementById('searchText').value.toLowerCase();
+  const searchTerms = searchInput
+    .split(',')
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+  const selectedRegions = getSelectedValues(document.getElementById('regionFilter'));
+  const selectedCategories = getSelectedValues(document.getElementById('categoryFilter'));
+
+  const filteredEvents = allEvents.filter(event => {
+    const name = (event['Назва'] || '').toLowerCase();
+    const region = event['Регіон'] || '';
+    const category = event['Категорія'] || '';
+    const type = event['Тип'] || '';
+    const fromRaw = event['Початок'];
+    const toRaw = event['Кінець'];
+
+    const fromEvent = parseInt((fromRaw || '').replace(/[^0-9]/g, '').substring(0, 4));
+    const toEvent = parseInt((toRaw || '').replace(/[^0-9]/g, '').substring(0, 4));
+
+    const eventStart = isNaN(fromEvent) ? 1000 : fromEvent;
+    const eventEnd = isNaN(toEvent) ? to : toEvent;
+
+    const hasOverlap =
+      (type === 'точка' && eventStart >= from && eventStart <= to) ||
+      (type !== 'точка' && eventEnd >= from && eventStart <= to);
+
+    return (
+      hasOverlap &&
+      (searchTerms.length === 0 || searchTerms.some(term => name.includes(term))) &&
+      (selectedRegions.length === 0 || selectedRegions.includes(region)) &&
+      (selectedCategories.length === 0 || selectedCategories.includes(category))
+    );
+  });
+
+  renderTimeline(filteredEvents, from, to);
+}
+
+  window.addEventListener('DOMContentLoaded', () => {
+    Papa.parse('chart.csv', {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      trimHeaders: true,
+      dynamicTyping: false,
+      complete: function (results) {
+        allEvents = results.data;
+        applyYearFilter();
+        populateFilters(allEvents);
+      }
+    });
+  });
+
+  function populateFilters(events) {
+    const regionSet = new Set();
+    const categorySet = new Set();
+
+    events.forEach(e => {
+      if (e['Регіон']) regionSet.add(e['Регіон']);
+      if (e['Категорія']) categorySet.add(e['Категорія']);
+    });
+
+    const regionSelect = document.getElementById('regionFilter');
+    const categorySelect = document.getElementById('categoryFilter');
+
+    [...regionSet].sort().forEach(region => {
+      const option = new Option(region, region);
+      regionSelect.appendChild(option);
+    });
+
+    [...categorySet].sort().forEach(category => {
+      const option = new Option(category, category);
+      categorySelect.appendChild(option);
+    });
+  }
+
+  function getSelectedValues(selectEl) {
+    return [...selectEl.options].filter(opt => opt.selected).map(opt => opt.value);
+  }
+</script>
+</body>
+</html>
