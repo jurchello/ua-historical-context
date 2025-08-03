@@ -82,6 +82,49 @@
       text-align: center;
     }
 
+    .legend-box {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+      margin-right: 6px;
+      border: 1px solid #ccc;
+    }
+
+    .legend-box.point {
+      background-color: #23d855;
+    }
+
+    .legend-box.active {
+      background-color: #23d855;
+    }
+
+    .legend-box.approximate {
+      background-color: #f5bd00;
+    }
+
+    .legend-box.between {
+      background-image: repeating-linear-gradient(
+              45deg,
+              #f5bd00 0,
+              #f5bd00 4px,
+              transparent 4px,
+              transparent 8px
+      );
+      background-color: white;
+    }
+
+    .legend-box.border-only {
+      width: auto;
+      padding: 0 6px;
+      font-weight: bold;
+      font-size: 14px;
+      color: #1b33dd;
+      text-align: center;
+      line-height: 20px;
+      border: 1px solid #ccc;
+    }
+
     @media (max-width: 768px) {
       .container-fluid > .d-flex {
         flex-wrap: nowrap;
@@ -168,6 +211,16 @@
       <div id="labels"></div>
     </div>
     <div class="timeline-scroll" id="timeline"></div>
+    <div class="mt-3" id="legend">
+      <strong>Легенда:</strong>
+      <div class="d-flex flex-wrap align-items-center gap-3 mt-2 small">
+        <div><span class="legend-box active"></span> період</div>
+        <div><span class="legend-box approximate"></span> неточний період</div>
+        <div><span class="legend-box between"></span> між датами</div>
+        <div><span class="legend-box point"></span> точка</div>
+        <div><span class="legend-box border-only">≈</span> приблизний рік</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -267,7 +320,7 @@
           alert(fullText + fullComment);
         }
       });
-      
+
       labels.appendChild(labelDiv);
 
       const row = document.createElement('div');
