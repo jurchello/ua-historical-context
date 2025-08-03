@@ -179,8 +179,6 @@
 
   function renderTimeline(events, fromYear, toYear) {
 
-
-
     const usedYearsSet = new Set();
     events.forEach(event => {
       const type = event['Тип'] || '';
@@ -262,6 +260,14 @@
       const fullText = `${region}. ${category}: ${name}`;
       labelDiv.textContent = fullText.slice(0, 100);
       labelDiv.title = comment ? `${fullText}\n${comment}` : fullText;
+
+      labelDiv.addEventListener('click', function () {
+        if (window.innerWidth <= 768) {
+          const fullComment = comment ? `\n\n${comment}` : '';
+          alert(fullText + fullComment);
+        }
+      });
+      
       labels.appendChild(labelDiv);
 
       const row = document.createElement('div');
